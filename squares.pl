@@ -44,6 +44,7 @@ solve(Board, Sums, Solution) :-
     restrict_diamond(Board, Solution),
     restrict_triangle(Board, NumRows, NumCols, Solution),
     restrict_star(Board, NumRows, NumCols, Solution),
+    restrict_square(Board, NumRows, NumCols, Solution),
     flatten(Solution, FlatVariables),
     labeling([], FlatVariables).
 
@@ -217,3 +218,46 @@ restrict_star_neighbours([Val|Values]):-
     Val #\= 5, 
     Val #\= 7, 
     restrict_star_neighbours(Values).
+
+restrict_square(Board, NumRows, NumCols, Solution):-
+    restrict_square_aux(Board, NumRows, NumCols, 1, Solution).
+
+restrict_square_aux(Board, NumRows, NumCols, Row, Solution):-
+    restrict_square_row(Board, Row, 1, NumRows, NumCols, Solution),
+    NewRow is Row + 1,
+    restrict_square_aux(Board, NumRows, NumCols, NewRow, Solution).
+
+restrict_square_aux(_, NumRows, _, Row, _):-
+    Row > NumRows.    
+
+restrict_square_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, square),
+    search_coordinates(Row, Col, Solution, Value),
+    Value rem 5 #= 0,
+    all_neighbour_coordinates(Row, Col, NumRows, NumCols, Neighbours),
+    search_list_coordinates(Neighbours, Solution, Values),
+    search_list_coordinates(Neighbours, Board, Symbols),
+    restrict_square_neighbours(Value, Values, Symbols),
+    NewCol is Col + 1,
+    restrict_square_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_square_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, NotSquare),
+    NotSquare \= square, 
+    NewCol is Col + 1,
+    restrict_square_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_square_row(_, _, Col, _, NumCols, _):-
+    Col > NumCols.
+
+restrict_square_neighbours(_, [], []).
+restrict_square_neighbours(SquareValue, [_|Values], [diamond|Symbols]):-
+    restrict_square_neighbours(SquareValue, Values, Symbols).
+
+restrict_square_neighbours(SquareValue, [Val|Values], [NotDia|Symbols]):-
+    NotDia \= diamond, 
+    SquareValue #\= Val,
+    restrict_square_neighbours(SquareValue, Values, Symbols).
+    
+
+
