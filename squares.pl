@@ -46,6 +46,7 @@ solve(Board, Sums, Solution) :-
     restrict_star(Board, NumRows, NumCols, Solution),
     restrict_square(Board, NumRows, NumCols, Solution),
     restrict_heart(Board, NumRows, NumCols, Solution),
+    restrict_knight(Board, NumRows, NumCols, Solution),
     flatten(Solution, FlatVariables),
     labeling([], FlatVariables).
 
@@ -160,6 +161,18 @@ all_neighbour_coordinates(Row, Col, NumRows, NumCols, Neighbours):-
     ColRight is Col + 1,
     PossibleNeighbours = [[RowUp, Col], [RowDown, Col], [Row, ColLeft], [Row, ColRight]],
     remove_invalid(PossibleNeighbours, NumRows, NumCols, Neighbours).
+
+all_knight_neighbour_coordinates(Row, Col, NumRows, NumCols, KnightNeigh):-
+    RowUpUp is Row - 2,
+    RowUp is Row - 1,
+    RowDown is Row + 1,
+    RowDownDown is Row + 2,
+    ColLeftLeft is Col - 2,
+    ColLeft is Col - 1,
+    ColRight is Col + 1,
+    ColRightRight is Col + 2,
+    PossibleKnightNeighbours = [[RowUpUp, ColLeft], [RowUpUp, ColRight], [RowUp, ColRightRight], [RowDown, ColRightRight], [RowDownDown, ColRight], [RowDownDown, ColLeft], [RowDown, ColLeftLeft], [RowUp, ColLeftLeft]],
+    remove_invalid(PossibleKnightNeighbours, NumRows, NumCols, KnightNeigh).
 
 remove_invalid([], _, _, []).
 remove_invalid([H|Coordinates], NumRows, NumCols, [H|ValidCoordinates]):-
@@ -303,5 +316,40 @@ sum_neighbour_hearts([_|Values], [NotHeart|Symbols], Sum):-
     NotHeart \= heart,
     sum_neighbour_hearts(Values, Symbols, Sum).
  
+restrict_knight(Board, NumRows, NumCols, Solution):-
+    restrict_knight_aux(Board, NumRows, NumCols, 1, Solution).
 
+restrict_knight_aux(Board, NumRows, NumCols, Row, Solution):-
+    restrict_knight_row(Board, Row, 1, NumRows, NumCols, Solution),
+    NewRow is Row + 1,
+    restrict_knight_aux(Board, NumRows, NumCols, NewRow, Solution).
 
+restrict_knight_aux(_, NumRows, _, Row, _):-
+    Row > NumRows.    
+
+restrict_knight_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, knight),
+    search_coordinates(Row, Col, Solution, Value),
+    all_knight_neighbour_coordinates(Row, Col, NumRows, NumCols, Neighbours),
+    search_list_coordinates(Neighbours, Solution, Values),
+    restrict_knight_neighbours(Value, Values),
+    NewCol is Col + 1,
+    restrict_knight_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_knight_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, NotKnight),
+    NotKnight \= knight, 
+    NewCol is Col + 1,
+    restrict_knight_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_knight_row(_, _, Col, _, NumCols, _):-
+    Col > NumCols.
+
+restrict_knight_neighbours(Value, Values):-
+    sum_neighbour_knight(Values, Sum),
+    Value #= Sum.
+
+sum_neighbour_knight([], 0).
+sum_neighbour_knight([Value|Values], Sum):-
+    sum_neighbour_knight(Values, PartialSum),
+    PartialSum + (- 1 * (Value rem 2) + 1) #= Sum. 
