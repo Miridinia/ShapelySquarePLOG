@@ -1,5 +1,5 @@
-:- use_module(library(clpfd)),
-use_module(library(lists)).
+:- use_module(library(clpfd)).
+:- use_module(library(lists)).
 
 board(Board):- Board = [
     [square, knight, blank, diamond, square, circle, blank],
@@ -15,8 +15,13 @@ test:-
     board(Board),
     row_sums(Sums),
     solve(Board, Sums, Solution),
-    print(Solution).
+    print_board(Solution).
 
+print_board([]).
+print_board([Row|Board]):-
+    print(Row),
+    nl,
+    print_board(Board).
 
 row_sums(Sums):- Sums = [23, 20, 26, 20, 26, 19, 22]. 
 
@@ -37,6 +42,7 @@ solve(Board, Sums, Solution) :-
     restrict_row_sums(Sums, Solution),
     restrict_circle(Board, Solution),
     restrict_diamond(Board, Solution),
+    restrict_triangle(Board, NumRows, NumCols, Solution),
     flatten(Solution, FlatVariables),
     labeling([], FlatVariables).
 
@@ -104,5 +110,38 @@ restrict_diamond_row_aux([NotDia|Row], [SolH|RowSol], LeftSum):-
     SolH + LeftSum #= NewSum,
     restrict_diamond_row_aux(Row, RowSol, NewSum).
     
+search_coordinates(RowNum, ColNum, Board, Val):-
+    nth1(RowNum, Board, Row),
+    nth1(ColNum, Row, Val).
 
+restrict_triangle(Board, NumRows, NumCols, Solution):-
+    restrict_triangle_aux(Board, NumRows, NumCols, 1, Solution).
+
+restrict_triangle_aux(Board, NumRows, NumCols, Row, Solution):-
+    restrict_triangle_row(Board, Row, 1, NumCols, Solution),
+    NewRow is Row + 1,
+    restrict_triangle_aux(Board, NumRows, NumCols, NewRow, Solution).
+
+restrict_triangle_aux(_, NumRows, _, Row, _):-
+    Row > NumRows.
+
+restrict_triangle_row(Board, Row, Col, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, triangle),
+    UpRow is Row - 1,
+    search_coordinates(UpRow, Col, Solution, UpValue),
+    UpValue rem 2 #= 0,
+    search_coordinates(Row, Col, Solution, Value),
+    Value #< UpValue,
+    Value #\= 0,
+    NewCol is Col + 1,
+    restrict_triangle_row(Board, Row, NewCol, NumCols, Solution).
+
+restrict_triangle_row(Board, Row, Col, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, NotTriangle),
+    NotTriangle \= triangle, 
+    NewCol is Col + 1,
+    restrict_triangle_row(Board, Row, NewCol, NumCols, Solution).
+
+restrict_triangle_row(_, _, Col, NumCols, _):-
+    Col > NumCols.
 
