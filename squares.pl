@@ -43,6 +43,7 @@ solve(Board, Sums, Solution) :-
     restrict_circle(Board, Solution),
     restrict_diamond(Board, Solution),
     restrict_triangle(Board, NumRows, NumCols, Solution),
+    restrict_star(Board, NumRows, NumCols, Solution),
     flatten(Solution, FlatVariables),
     labeling([], FlatVariables).
 
@@ -114,6 +115,11 @@ search_coordinates(RowNum, ColNum, Board, Val):-
     nth1(RowNum, Board, Row),
     nth1(ColNum, Row, Val).
 
+search_list_coordinates([], _, []).
+search_list_coordinates([[Row, Col]|Coordinates], Board, [Val|Vals]):-
+    search_coordinates(Row, Col, Board, Val),
+    search_list_coordinates(Coordinates, Board, Vals).
+
 restrict_triangle(Board, NumRows, NumCols, Solution):-
     restrict_triangle_aux(Board, NumRows, NumCols, 1, Solution).
 
@@ -145,3 +151,69 @@ restrict_triangle_row(Board, Row, Col, NumCols, Solution):-
 restrict_triangle_row(_, _, Col, NumCols, _):-
     Col > NumCols.
 
+all_neighbour_coordinates(Row, Col, NumRows, NumCols, Neighbours):-
+    RowUp is Row - 1,
+    RowDown is Row + 1,
+    ColLeft is Col - 1,
+    ColRight is Col + 1,
+    PossibleNeighbours = [[RowUp, Col], [RowDown, Col], [Row, ColLeft], [Row, ColRight]],
+    remove_invalid(PossibleNeighbours, NumRows, NumCols, Neighbours).
+
+remove_invalid([], _, _, []).
+remove_invalid([H|Coordinates], NumRows, NumCols, [H|ValidCoordinates]):-
+    H = [Row,Col],
+    valid_coordinates(Row, Col, NumRows, NumCols),
+    remove_invalid(Coordinates, NumRows, NumCols, ValidCoordinates).
+
+remove_invalid([[Row,Col]|Coordinates], NumRows, NumCols, ValidCoordinates):-
+    \+ valid_coordinates(Row, Col, NumRows, NumCols),
+    remove_invalid(Coordinates, NumRows, NumCols, ValidCoordinates).
+
+valid_coordinates(Row, Col, NumRows, NumCols):-
+    Row =< NumRows,
+    Col =< NumCols,
+    Row > 0,
+    Col > 0.
+
+restrict_star(Board, NumRows, NumCols, Solution):-
+    restrict_star_aux(Board, NumRows, NumCols, 1, Solution).
+
+restrict_star_aux(Board, NumRows, NumCols, Row, Solution):-
+    restrict_star_row(Board, Row, 1, NumRows, NumCols, Solution),
+    NewRow is Row + 1,
+    restrict_star_aux(Board, NumRows, NumCols, NewRow, Solution).
+
+restrict_star_aux(_, NumRows, _, Row, _):-
+    Row > NumRows.    
+
+restrict_star_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, star),
+    search_coordinates(Row, Col, Solution, Value),
+    Value #> 1,
+    Value #\= 4,
+    Value #\= 6,
+    Value #\= 8,
+    Value #\= 9,
+    all_neighbour_coordinates(Row, Col, NumRows, NumCols, Neighbours),
+    search_list_coordinates(Neighbours, Solution, Values),
+    restrict_star_neighbours(Values),
+    NewCol is Col + 1,
+    restrict_star_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_star_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, NotStar),
+    NotStar \= star, 
+    NewCol is Col + 1,
+    restrict_star_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_star_row(_, _, Col, _, NumCols, _):-
+    Col > NumCols.
+
+restrict_star_neighbours([]).
+restrict_star_neighbours([Val|Values]):-
+    Val #\= 1,
+    Val #\= 2,
+    Val #\= 3, 
+    Val #\= 5, 
+    Val #\= 7, 
+    restrict_star_neighbours(Values).
