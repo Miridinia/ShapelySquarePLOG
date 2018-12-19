@@ -36,6 +36,7 @@ solve(Board, Sums, Solution) :-
     restrict_domain(Solution),
     restrict_row_sums(Sums, Solution),
     restrict_circle(Board, Solution),
+    restrict_diamond(Board, Solution),
     flatten(Solution, FlatVariables),
     labeling([], FlatVariables).
 
@@ -83,5 +84,25 @@ get_circles_row([NotCircle|Row], [_|SolRow], CircleRow):-
     get_circles_row(Row, SolRow, CircleRow).
 
 
+restrict_diamond([], []).
+restrict_diamond([Row|Board], [RowSol|Solution]):-
+    restrict_diamond_row(Row, RowSol),
+    restrict_diamond(Board, Solution).
+
+restrict_diamond_row(Row, RowSol):-
+    restrict_diamond_row_aux(Row, RowSol, 0).
+
+restrict_diamond_row_aux([], [], _).
+restrict_diamond_row_aux([diamond|Row], [SolH|RowSol], LeftSum):-
+    SolH rem 2 #\= 0,
+    SolH #= LeftSum,
+    SolH + LeftSum #= NewSum,
+    restrict_diamond_row_aux(Row, RowSol, NewSum).
+
+restrict_diamond_row_aux([NotDia|Row], [SolH|RowSol], LeftSum):-
+    NotDia \= diamond,
+    SolH + LeftSum #= NewSum,
+    restrict_diamond_row_aux(Row, RowSol, NewSum).
+    
 
 
