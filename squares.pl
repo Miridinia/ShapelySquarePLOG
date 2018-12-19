@@ -45,6 +45,7 @@ solve(Board, Sums, Solution) :-
     restrict_triangle(Board, NumRows, NumCols, Solution),
     restrict_star(Board, NumRows, NumCols, Solution),
     restrict_square(Board, NumRows, NumCols, Solution),
+    restrict_heart(Board, NumRows, NumCols, Solution),
     flatten(Solution, FlatVariables),
     labeling([], FlatVariables).
 
@@ -259,5 +260,48 @@ restrict_square_neighbours(SquareValue, [Val|Values], [NotDia|Symbols]):-
     SquareValue #\= Val,
     restrict_square_neighbours(SquareValue, Values, Symbols).
     
+restrict_heart(Board, NumRows, NumCols, Solution):-
+    restrict_heart_aux(Board, NumRows, NumCols, 1, Solution).
+
+restrict_heart_aux(Board, NumRows, NumCols, Row, Solution):-
+    restrict_heart_row(Board, Row, 1, NumRows, NumCols, Solution),
+    NewRow is Row + 1,
+    restrict_heart_aux(Board, NumRows, NumCols, NewRow, Solution).
+
+restrict_heart_aux(_, NumRows, _, Row, _):-
+    Row > NumRows.    
+
+restrict_heart_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, heart),
+    search_coordinates(Row, Col, Solution, Value),
+    all_neighbour_coordinates(Row, Col, NumRows, NumCols, Neighbours),
+    search_list_coordinates(Neighbours, Solution, Values),
+    search_list_coordinates(Neighbours, Board, Symbols),
+    restrict_heart_neighbours(Value, Values, Symbols),
+    NewCol is Col + 1,
+    restrict_heart_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_heart_row(Board, Row, Col, NumRows, NumCols, Solution):-
+    search_coordinates(Row, Col, Board, NotHeart),
+    NotHeart \= heart, 
+    NewCol is Col + 1,
+    restrict_heart_row(Board, Row, NewCol, NumRows, NumCols, Solution).
+
+restrict_heart_row(_, _, Col, _, NumCols, _):-
+    Col > NumCols.
+
+restrict_heart_neighbours(Value, Values, Symbols):-
+    sum_neighbour_hearts(Values, Symbols, Sum),
+    Value + Sum #= 10.
+
+sum_neighbour_hearts([], [], 0).
+sum_neighbour_hearts([Value|Values], [heart|Symbols], Sum):-
+    sum_neighbour_hearts(Values, Symbols, PartialSum),
+    PartialSum + Value #= Sum. 
+
+sum_neighbour_hearts([_|Values], [NotHeart|Symbols], Sum):-
+    NotHeart \= heart,
+    sum_neighbour_hearts(Values, Symbols, Sum).
+ 
 
 
