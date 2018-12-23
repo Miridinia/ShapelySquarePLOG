@@ -35,19 +35,32 @@ board3(Board):- Board = [
 test1:-
     board1(Board),
     row_sums1(Sums),
+    statistics(walltime,[Start,_]),
     solve(Board, Sums, Solution),
-    print_board(Solution).
+    statistics(walltime,[End,_]),
+    print_board(Solution),
+    Time is End - Start,
+    format('Duration : ~3d s~n',[Time]).
+
 test2:-
     board2(Board),
     row_sums2(Sums),
+    statistics(walltime,[Start,_]),
     solve(Board, Sums, Solution),
-    print_board(Solution).
+    statistics(walltime,[End,_]),
+    print_board(Solution),
+    Time is End - Start,
+    format('Duration : ~3d s~n',[Time]).
 
 test3:-
     board3(Board),
     row_sums3(Sums),
+    statistics(walltime,[Start,_]),
     solve(Board, Sums, Solution),
-    print_board(Solution).
+    statistics(walltime,[End,_]),
+    print_board(Solution),
+    Time is End - Start,
+    format('Duration : ~3d s~n',[Time]).
 
 print_board([]).
 print_board([Row|Board]):-
