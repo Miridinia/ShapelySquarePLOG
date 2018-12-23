@@ -1,7 +1,7 @@
 :- use_module(library(clpfd)).
 :- use_module(library(lists)).
 
-board(Board):- Board = [
+board1(Board):- Board = [
     [square, knight, blank, diamond, square, circle, blank],
     [square, square, triangle, circle, square, square, blank],
     [circle, blank, triangle, diamond, knight, square, triangle],
@@ -11,9 +11,41 @@ board(Board):- Board = [
     [circle, triangle, diamond, blank, circle, square, triangle]
 ].
 
-test:-
-    board(Board),
-    row_sums(Sums),
+board2(Board):- Board = [
+    [circle, blank, diamond, knight, knight, circle, heart],
+    [blank, square, square, circle, heart, square, heart],
+    [triangle, square, heart, diamond, heart, square, circle],
+    [triangle, blank, heart, circle, square, square, heart],
+    [triangle, knight, star, diamond, square, circle, heart],
+    [triangle, blank, heart, diamond, square, square, triangle],
+    [square, square, heart, diamond, square, circle, triangle]
+].
+
+board3(Board):- Board = [
+    [star, blank, circle, diamond, square, square, square],
+    [blank, triangle, heart, circle, square, square, square],
+    [triangle, triangle, heart, diamond, square, circle, heart],
+    [circle, square, square, circle, diamond, knight, heart],
+    [heart, square, diamond, circle, heart, heart, square],
+    [heart, circle, diamond, heart, triangle, square, square],
+    [knight, blank, diamond, heart, square, square, circle]
+].
+
+
+test1:-
+    board1(Board),
+    row_sums1(Sums),
+    solve(Board, Sums, Solution),
+    print_board(Solution).
+test2:-
+    board2(Board),
+    row_sums2(Sums),
+    solve(Board, Sums, Solution),
+    print_board(Solution).
+
+test3:-
+    board3(Board),
+    row_sums3(Sums),
     solve(Board, Sums, Solution),
     print_board(Solution).
 
@@ -23,7 +55,9 @@ print_board([Row|Board]):-
     nl,
     print_board(Board).
 
-row_sums(Sums):- Sums = [23, 20, 26, 20, 26, 19, 22]. 
+row_sums1(Sums):- Sums = [23, 20, 26, 20, 26, 19, 22].
+row_sums2(Sums):- Sums = [30, 43, 24, 31, 37, 27, 28].
+row_sums3(Sums):- Sums = [19, 29, 21, 18, 25, 39, 17].
 
 twod_same_size(Board, Copy, NumRows, NumCols):-
     length(Board, NumRows),
@@ -34,10 +68,10 @@ oned_same_size([],[], _).
 oned_same_size([H|RemainingBoard], [H2|RemainingCopy], NumCols) :-
     length(H, NumCols),
     length(H2, NumCols),
-    oned_same_size(RemainingBoard, RemainingCopy, NumCols).    
+    oned_same_size(RemainingBoard, RemainingCopy, NumCols).
 
 solve(Board, Sums, Solution) :-
-    twod_same_size(Board, Solution, NumRows, NumCols),   
+    twod_same_size(Board, Solution, NumRows, NumCols),
     restrict_domain(Solution),
     restrict_row_sums(Sums, Solution),
     restrict_circle(Board, Solution),
@@ -51,14 +85,14 @@ solve(Board, Sums, Solution) :-
     labeling([], FlatVariables).
 
 restrict_domain([]).
-restrict_domain([Row|Solution]):- 
+restrict_domain([Row|Solution]):-
     domain(Row, 0, 9),
     restrict_domain(Solution).
 
 flatten([], []).
 flatten([H|T], Flat):-
     flatten(T, FlatT),
-    append(H, FlatT, Flat). 
+    append(H, FlatT, Flat).
 
 restrict_row_sums([], []).
 restrict_row_sums([RowSum|Sums],[Row|Solution]):-
@@ -113,7 +147,7 @@ restrict_diamond_row_aux([NotDia|Row], [SolH|RowSol], LeftSum):-
     NotDia \= diamond,
     SolH + LeftSum #= NewSum,
     restrict_diamond_row_aux(Row, RowSol, NewSum).
-    
+
 search_coordinates(RowNum, ColNum, Board, Val):-
     nth1(RowNum, Board, Row),
     nth1(ColNum, Row, Val).
@@ -147,7 +181,7 @@ restrict_triangle_row(Board, Row, Col, NumCols, Solution):-
 
 restrict_triangle_row(Board, Row, Col, NumCols, Solution):-
     search_coordinates(Row, Col, Board, NotTriangle),
-    NotTriangle \= triangle, 
+    NotTriangle \= triangle,
     NewCol is Col + 1,
     restrict_triangle_row(Board, Row, NewCol, NumCols, Solution).
 
@@ -199,7 +233,7 @@ restrict_star_aux(Board, NumRows, NumCols, Row, Solution):-
     restrict_star_aux(Board, NumRows, NumCols, NewRow, Solution).
 
 restrict_star_aux(_, NumRows, _, Row, _):-
-    Row > NumRows.    
+    Row > NumRows.
 
 restrict_star_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, star),
@@ -217,7 +251,7 @@ restrict_star_row(Board, Row, Col, NumRows, NumCols, Solution):-
 
 restrict_star_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, NotStar),
-    NotStar \= star, 
+    NotStar \= star,
     NewCol is Col + 1,
     restrict_star_row(Board, Row, NewCol, NumRows, NumCols, Solution).
 
@@ -228,9 +262,9 @@ restrict_star_neighbours([]).
 restrict_star_neighbours([Val|Values]):-
     Val #\= 1,
     Val #\= 2,
-    Val #\= 3, 
-    Val #\= 5, 
-    Val #\= 7, 
+    Val #\= 3,
+    Val #\= 5,
+    Val #\= 7,
     restrict_star_neighbours(Values).
 
 restrict_square(Board, NumRows, NumCols, Solution):-
@@ -242,7 +276,7 @@ restrict_square_aux(Board, NumRows, NumCols, Row, Solution):-
     restrict_square_aux(Board, NumRows, NumCols, NewRow, Solution).
 
 restrict_square_aux(_, NumRows, _, Row, _):-
-    Row > NumRows.    
+    Row > NumRows.
 
 restrict_square_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, square),
@@ -257,7 +291,7 @@ restrict_square_row(Board, Row, Col, NumRows, NumCols, Solution):-
 
 restrict_square_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, NotSquare),
-    NotSquare \= square, 
+    NotSquare \= square,
     NewCol is Col + 1,
     restrict_square_row(Board, Row, NewCol, NumRows, NumCols, Solution).
 
@@ -269,10 +303,10 @@ restrict_square_neighbours(SquareValue, [_|Values], [diamond|Symbols]):-
     restrict_square_neighbours(SquareValue, Values, Symbols).
 
 restrict_square_neighbours(SquareValue, [Val|Values], [NotDia|Symbols]):-
-    NotDia \= diamond, 
+    NotDia \= diamond,
     SquareValue #\= Val,
     restrict_square_neighbours(SquareValue, Values, Symbols).
-    
+
 restrict_heart(Board, NumRows, NumCols, Solution):-
     restrict_heart_aux(Board, NumRows, NumCols, 1, Solution).
 
@@ -282,7 +316,7 @@ restrict_heart_aux(Board, NumRows, NumCols, Row, Solution):-
     restrict_heart_aux(Board, NumRows, NumCols, NewRow, Solution).
 
 restrict_heart_aux(_, NumRows, _, Row, _):-
-    Row > NumRows.    
+    Row > NumRows.
 
 restrict_heart_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, heart),
@@ -296,7 +330,7 @@ restrict_heart_row(Board, Row, Col, NumRows, NumCols, Solution):-
 
 restrict_heart_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, NotHeart),
-    NotHeart \= heart, 
+    NotHeart \= heart,
     NewCol is Col + 1,
     restrict_heart_row(Board, Row, NewCol, NumRows, NumCols, Solution).
 
@@ -310,12 +344,12 @@ restrict_heart_neighbours(Value, Values, Symbols):-
 sum_neighbour_hearts([], [], 0).
 sum_neighbour_hearts([Value|Values], [heart|Symbols], Sum):-
     sum_neighbour_hearts(Values, Symbols, PartialSum),
-    PartialSum + Value #= Sum. 
+    PartialSum + Value #= Sum.
 
 sum_neighbour_hearts([_|Values], [NotHeart|Symbols], Sum):-
     NotHeart \= heart,
     sum_neighbour_hearts(Values, Symbols, Sum).
- 
+
 restrict_knight(Board, NumRows, NumCols, Solution):-
     restrict_knight_aux(Board, NumRows, NumCols, 1, Solution).
 
@@ -325,7 +359,7 @@ restrict_knight_aux(Board, NumRows, NumCols, Row, Solution):-
     restrict_knight_aux(Board, NumRows, NumCols, NewRow, Solution).
 
 restrict_knight_aux(_, NumRows, _, Row, _):-
-    Row > NumRows.    
+    Row > NumRows.
 
 restrict_knight_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, knight),
@@ -338,7 +372,7 @@ restrict_knight_row(Board, Row, Col, NumRows, NumCols, Solution):-
 
 restrict_knight_row(Board, Row, Col, NumRows, NumCols, Solution):-
     search_coordinates(Row, Col, Board, NotKnight),
-    NotKnight \= knight, 
+    NotKnight \= knight,
     NewCol is Col + 1,
     restrict_knight_row(Board, Row, NewCol, NumRows, NumCols, Solution).
 
@@ -352,4 +386,4 @@ restrict_knight_neighbours(Value, Values):-
 sum_neighbour_knight([], 0).
 sum_neighbour_knight([Value|Values], Sum):-
     sum_neighbour_knight(Values, PartialSum),
-    PartialSum + (- 1 * (Value rem 2) + 1) #= Sum. 
+    PartialSum + (- 1 * (Value rem 2) + 1) #= Sum.
